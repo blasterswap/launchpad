@@ -325,18 +325,9 @@ contract BlasterLaunchpad is IBlasterLaunchpad, ReentrancyGuard {
             _amountTokenDesired,
             _amountTokenMin,
             _amountETHMin,
-            address(this),
+            _lpReceiver,
             block.timestamp
         );
-
-        if (_lpReceiver != address(this)) {
-            (address token0, address token1) = sortTokens(_coin, WETH);
-            address pair = IBlasterswapV2Factory(blasterRouter.factory())
-                .getPair(token0, token1);
-
-            success = IERC20(pair).transfer(_lpReceiver, liquidityTokens);
-            require(success, "BlasterLaunchpad: transfer lp tokens failed");
-        }
 
         if (_amountTokenDesired > amountToken) {
             success = IERC20(_coin).transfer(
