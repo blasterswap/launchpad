@@ -199,7 +199,8 @@ contract BlasterLaunchpad is IBlasterLaunchpad, ReentrancyGuard {
             _coin,
             _amountTokenDesired,
             _amountTokenMin,
-            _amountETHMin
+            _amountETHMin,
+            msg.sender
         );
     }
 
@@ -214,7 +215,8 @@ contract BlasterLaunchpad is IBlasterLaunchpad, ReentrancyGuard {
             _coin,
             _amountTokenDesired,
             _amountTokenMin,
-            _amountETHMin
+            _amountETHMin,
+            address(this)
         );
 
         (address token0, address token1) = sortTokens(address(_coin), WETH);
@@ -299,7 +301,8 @@ contract BlasterLaunchpad is IBlasterLaunchpad, ReentrancyGuard {
         address _coin,
         uint _amountTokenDesired,
         uint _amountTokenMin,
-        uint _amountETHMin
+        uint _amountETHMin,
+        address _lpReceiver
     ) internal returns (uint256) {
         ICoin(_coin).disableBurnAndTaxes();
 
@@ -326,14 +329,14 @@ contract BlasterLaunchpad is IBlasterLaunchpad, ReentrancyGuard {
             block.timestamp
         );
 
-        (address token0, address token1) = sortTokens(_coin, WETH);
-        address pair = IBlasterswapV2Factory(blasterRouter.factory()).getPair(
-            token0,
-            token1
-        );
+        if (_lpReceiver != address(this)) {
+            (address token0, address token1) = sortTokens(_coin, WETH);
+            address pair = IBlasterswapV2Factory(blasterRouter.factory())
+                .getPair(token0, token1);
 
-        success = IERC20(pair).transfer(msg.sender, liquidityTokens);
-        require(success, "BlasterLaunchpad: transfer lp tokens failed");
+            success = IERC20(pair).transfer(_lpReceiver, liquidityTokens);
+            require(success, "BlasterLaunchpad: transfer lp tokens failed");
+        }
 
         if (_amountTokenDesired > amountToken) {
             success = IERC20(_coin).transfer(
