@@ -3,10 +3,6 @@
   "version": "1.0.0",
   "description": "",
   "main": "index.js",
-  "scripts": {
-    "test": "echo \"Error: no test specified\" && exit 1",
-    "slither": "slither ."
-  },
   "author": "",
   "license": "ISC",
   "devDependencies": {
@@ -23,5 +19,10 @@
     "ethers": "^6.11.1",
     "hardhat": "^2.19.4",
     "hardhat-deploy": "^0.11.45"
+  },
+  "scripts": {
+    "test": "hardhat test",
+    "deploy:gas-refund": "hardhat deploy --tags GasRefund",
+    "deploy:gas-refund:blast": "hardhat deploy --tags GasRefund --network blast"
   }
 }

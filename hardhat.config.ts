@@ -4,20 +4,18 @@ import "@nomicfoundation/hardhat-verify";
 import "hardhat-deploy";
 import '@openzeppelin/hardhat-upgrades';
 import dotenv from "dotenv"
+import { ethers } from "ethers";
 
 dotenv.config()
 
-if (
-  process.env.BLAST_TEST_RPC === undefined ||
-  process.env.MNEMONIC === undefined ||
-  process.env.MNEMONIC_MAINNET === undefined ||
-  process.env.RPC_URL === undefined ||
-  process.env.ETHERSCAN_API_KEY === undefined ||
-  process.env.ETH_RPC === undefined ||
-  process.env.BLAST_MAINNET_RPC === undefined
-) {
-  throw new Error("Please set your MNEMONIC, RPC_URL and ETHERSCAN_API_KEY in a .env file")
-}
+const MNEMONIC_SEPOLIA = process.env.MNEMONIC_SEPOLIA || "";
+const MNEMONIC_BLAST = process.env.MNEMONIC_BLAST || "";
+const BLASTSCAN_API_KEY = process.env.BLASTSCAN_API_KEY || "";
+const GAS_REFUND_SIGNER_MNEMONIC = process.env.GAS_REFUND_MNEMONIC || "";
+
+const ETH_RPC_URI = process.env.ETH_RPC_URI || "";
+const BLAST_RPC_URI = process.env.BLAST_RPC_URI || "";
+const SEPOLIA_RPC_URI = process.env.SEPOLIA_RPC_URI || "";
 
 
 const config: HardhatUserConfig = {
@@ -46,59 +44,44 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: process.env.ETH_RPC,
+        url: ETH_RPC_URI,
         blockNumber: 19295210,
       },
       allowUnlimitedContractSize: false,
     },
     sepolia: {
-      url: process.env.SEPOLIA_RPC_URL,
+      url: SEPOLIA_RPC_URI,
       accounts: {
-        mnemonic: process.env.MNEMONIC,
+        mnemonic: MNEMONIC_SEPOLIA,
       }
     },
-    mumbai: {
-      url: process.env.RPC_URL,
-      accounts: {
-        mnemonic: process.env.MNEMONIC,
-      }
-    },
-    blastsepolia: {
-      url: process.env.BLAST_TEST_RPC,
-      accounts: {
-        mnemonic: process.env.MNEMONIC,
-      }
-    },
-    blast_mainnet: {
-      url: process.env.BLAST_MAINNET_RPC,
-      accounts: {
-        mnemonic: process.env.MNEMONIC_MAINNET,
-      },
-      chainId: 81457
+    blast: {
+      url: BLAST_RPC_URI,
+      chainId: 81457,
+      accounts: [
+        ethers.Wallet.fromPhrase(MNEMONIC_BLAST).privateKey,
+        ethers.Wallet.fromPhrase(GAS_REFUND_SIGNER_MNEMONIC).privateKey,
+      ]
     }
   },
   etherscan: {
     apiKey: {
-      blastsepolia: "blast_sepolia", // apiKey is not required, just set a placeholder
+      blast: BLASTSCAN_API_KEY,
     },
     customChains: [
       {
-        network: "blastsepolia",
-        chainId: 168587773,
+        network: "blast",
+        chainId: 81457,
         urls: {
-          apiURL: "https://api.routescan.io/v2/network/testnet/evm/168587773/etherscan",
-          browserURL: "https://testnet.blastscan.io"
+          apiURL: "https://api.blastscan.io/api",
+          browserURL: "https://blastscan.io"
         }
       }
     ]
   },
   namedAccounts: {
-    deployer: {
-      default: 0,
-    },
-    admin: {
-      default: 1,
-    },
+    deployer: 0,
+    gasSigner: 1,
   }
 };
 
