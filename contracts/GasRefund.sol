@@ -17,13 +17,13 @@ contract GasRefund is IGasRefund, Ownable {
     address public signerCandidate;
     address public ownerCandidate;
 
-    IBlast public constant blast =
-        IBlast(0x4300000000000000000000000000000000000002);
+    IBlast public immutable blast;
 
     mapping(address => uint256) public nonces;
 
-    constructor(address _signer) Ownable(msg.sender) {
+    constructor(address _signer, address _blast) Ownable(msg.sender) {
         signer = _signer;
+        blast = IBlast(_blast);
     }
 
     function changeSigner(address _signer) external onlyOwner {
@@ -34,7 +34,10 @@ contract GasRefund is IGasRefund, Ownable {
     }
 
     function confirmSigner() external onlyOwner {
-        require(signerCandidate != address(0), "GasRefund: signerCandidate is zero address");
+        require(
+            signerCandidate != address(0),
+            "GasRefund: signerCandidate is zero address"
+        );
         signer = signerCandidate;
 
         emit SignerCandidateConfirmed(signerCandidate);
@@ -48,16 +51,25 @@ contract GasRefund is IGasRefund, Ownable {
     }
 
     function confirmTransferOwnership() external onlyOwner {
-        require(ownerCandidate != address(0), "GasRefund: ownerCandidate is zero address");
+        require(
+            ownerCandidate != address(0),
+            "GasRefund: ownerCandidate is zero address"
+        );
         super._transferOwnership(ownerCandidate);
 
         emit OwnerCandidateConfirmed(owner());
     }
 
-    function configureGovernorOnBehalf(address[] calldata _pairs, address _newGovernor) external onlyOwner {
-        require(_newGovernor != address(0), "GasRefund: newGovernor is zero address");
+    function configureGovernorOnBehalf(
+        address[] calldata _pairs,
+        address _newGovernor
+    ) external onlyOwner {
+        require(
+            _newGovernor != address(0),
+            "GasRefund: newGovernor is zero address"
+        );
         uint i = 0;
-        for (; i < _pairs.length;) {
+        for (; i < _pairs.length; ) {
             blast.configureGovernorOnBehalf(_newGovernor, _pairs[i]);
             unchecked {
                 ++i;
@@ -90,7 +102,11 @@ contract GasRefund is IGasRefund, Ownable {
             "GasRefund: should have the same length"
         );
         for (uint i = 0; i < _contractAddresses.length; i++) {
-            blast.claimGasAtMinClaimRate(_contractAddresses[i], address(this), _minClaimRateBips[i]);
+            blast.claimGasAtMinClaimRate(
+                _contractAddresses[i],
+                address(this),
+                _minClaimRateBips[i]
+            );
         }
     }
 
@@ -141,10 +157,7 @@ contract GasRefund is IGasRefund, Ownable {
         return blast.readGasParams(contractAddress);
     }
 
-    function withdrawGas(
-        Withdrawal calldata _withdrawal,
-        bytes memory _sig
-    ) external payable {
+    function withdrawGas(uint256 _amount, bytes memory _sig) external payable {
         require(
             _verify(
                 keccak256(
@@ -152,7 +165,7 @@ contract GasRefund is IGasRefund, Ownable {
                         address(this),
                         block.chainid,
                         msg.sender,
-                        _withdrawal.amount,
+                        _amount,
                         nonces[msg.sender]
                     )
                 ),
@@ -162,12 +175,10 @@ contract GasRefund is IGasRefund, Ownable {
         );
 
         nonces[msg.sender]++;
-        (bool success, ) = address(msg.sender).call{value: _withdrawal.amount}(
-            ""
-        );
+        (bool success, ) = address(msg.sender).call{value: _amount}("");
         require(success, "GasRefund: transfer failed");
 
-        emit Withdrawn(msg.sender, _withdrawal.amount);
+        emit Withdrawn(msg.sender, _amount);
     }
 
     function _verify(

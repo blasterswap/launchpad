@@ -44,8 +44,8 @@ const config: HardhatUserConfig = {
   networks: {
     hardhat: {
       forking: {
-        url: ETH_RPC_URI,
-        blockNumber: 19295210,
+        url: BLAST_RPC_URI,
+        blockNumber: 3831616,
       },
       allowUnlimitedContractSize: false,
     },
