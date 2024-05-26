@@ -30,7 +30,7 @@ describe("GasRefund", function () {
 			expect(await gasRefund.blast()).to.equal(BlastAddress);
 		});
 
-		it("Should withdraw gas", async function () {
+		it("Should withdraw gas and revert with invalid signature on the second withdrawal", async function () {
 			const amount = ethers.parseEther("1");
 
 			await deployer.sendTransaction({
@@ -47,7 +47,17 @@ describe("GasRefund", function () {
 
 			const signature = await deployer.signMessage(ethers.getBytes(encodedPayload));
 
-			await gasRefund.connect(withdrawer).withdrawGas(amount, signature);
+			const balanceBefore = await ethers.provider.getBalance(withdrawer.address);
+			let tx = await gasRefund.connect(withdrawer).withdrawGas(amount, signature);
+			let rec = await tx.wait();
+
+			let gasSpent = rec!.gasPrice * rec!.gasUsed;
+			const balanceAfter = await ethers.provider.getBalance(withdrawer.address) + gasSpent;
+
+			expect(balanceAfter).to.equal(balanceBefore + amount);
+
+			await expect(gasRefund.connect(withdrawer).withdrawGas(amount, signature))
+				.to.be.revertedWith("GasRefund: invalid signature");
 		});
 
 	});
