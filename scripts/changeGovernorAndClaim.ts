@@ -13,9 +13,15 @@ async function changeGovernorAndClaim() {
 	// chainge governor to gasRefund contract
 	const factory = await ethers.getContractAt("IBlasterswapV2Factory", v2FactoryAddress);
 	const blast = await ethers.getContractAt("IBlast", blastGasAddress);
+	const gasRefund = await ethers.getContractAt("GasRefund", gasRefundAddress) as unknown as GasRefund;
 	const allPairLength = await factory.allPairsLength();
 
 	let totalGasSpent = 0n;
+
+	let tenPairAddresses: string[] = [];
+	let pairAddressesByTen: string[][] = [];
+	let tenCounter = 0;
+
 	for (let i = 0; i < allPairLength; i++) {
 		const pairAddress = await factory.allPairs(i);
 		let tx = await blast.connect(v2Governor).configureGovernorOnBehalf(
@@ -28,9 +34,25 @@ async function changeGovernorAndClaim() {
 
 		console.log(`governor for pair ${pairAddress
 			} changed to ${gasRefundAddress} `);
+
+		if (tenCounter === 10) {
+			pairAddressesByTen.push(tenPairAddresses);
+			tenPairAddresses = [];
+			tenCounter = 0;
+		}
+		tenPairAddresses.push(pairAddress);
+		tenCounter++;
+	}
+
+	for (let i = 0; i < pairAddressesByTen.length; i++) {
+		let tx = await gasRefund.connect(gasSigner).claimMaxGas(pairAddressesByTen[i]);
+		await tx.wait();
+		console.log(`Claimed gas for ${pairAddressesByTen[i].length} pairs`);
 	}
 
 	console.log(`total gas spent: ${totalGasSpent.toString()}`);
+
+
 }
 
 changeGovernorAndClaim();
