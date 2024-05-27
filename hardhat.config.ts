@@ -12,6 +12,7 @@ const MNEMONIC_SEPOLIA = process.env.MNEMONIC_SEPOLIA || "";
 const MNEMONIC_BLAST = process.env.MNEMONIC_BLAST || "";
 const BLASTSCAN_API_KEY = process.env.BLASTSCAN_API_KEY || "";
 const GAS_REFUND_SIGNER_MNEMONIC = process.env.GAS_REFUND_MNEMONIC || "";
+const V2_GAS_GOVERNOR_MNEMONIC = process.env.V2_GAS_GOVERNOR_MNEMONIC || "";
 
 const ETH_RPC_URI = process.env.ETH_RPC_URI || "";
 const BLAST_RPC_URI = process.env.BLAST_RPC_URI || "";
@@ -61,6 +62,7 @@ const config: HardhatUserConfig = {
       accounts: [
         ethers.Wallet.fromPhrase(MNEMONIC_BLAST).privateKey,
         ethers.Wallet.fromPhrase(GAS_REFUND_SIGNER_MNEMONIC).privateKey,
+        ethers.Wallet.fromPhrase(V2_GAS_GOVERNOR_MNEMONIC).privateKey,
       ]
     }
   },
@@ -82,6 +84,7 @@ const config: HardhatUserConfig = {
   namedAccounts: {
     deployer: 0,
     gasSigner: 1,
+    v2Governor: 2,
   }
 };
 
