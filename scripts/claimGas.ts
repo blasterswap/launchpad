@@ -1,17 +1,33 @@
-import { ethers } from "hardhat";
+import { ethers, } from "hardhat";
 import { GasRefund } from "../typechain-types";
 
+const gasRefundAddress = "0xba99b8a284f45447929a143dc2efa5bcfe7ade60";
+const chainId = 81457;
+const amount = 1;
+
 async function claimAllGas() {
-	const [owner] = await ethers.getSigners();
-	const gasRefundAddress = "0x88C8E1E32D2b4f42162929fF1103a260E919F283";
-	const blasterswapV2FactoryAddress = "0x4a81878E3672F9528a826aA7d23c2a9e8b009Cf3"
-	const blasterswapV2Router02Address = "0xd2eFc8534a7806f98a1a184E9D4b0879Cc65442f"
+	const [deployer, gasSigner] = await ethers.getSigners();
+
+	console.log(`Trying to claim with ${gasSigner.address}`);
 
 	const gasRefund = await ethers.getContractAt("GasRefund", gasRefundAddress) as unknown as GasRefund;
+	const currentNonce = await gasRefund.nonces(gasSigner.address);
 
-	await gasRefund.connect(owner).claimAllGas([blasterswapV2FactoryAddress]);
-	await gasRefund.connect(owner).claimAllGas([blasterswapV2Router02Address]);
+	const encodedPayloadHash = ethers.solidityPackedKeccak256(
+		["address", "uint256", "address", "uint", "uint"],
+		[(await gasRefund.getAddress()), chainId, gasSigner.address, amount, currentNonce]
+	);
+
+	const signature = await gasSigner.signMessage(ethers.getBytes(encodedPayloadHash));
+
+
+	console.log(ethers.getBytes(encodedPayloadHash));
+
+	await gasRefund.connect(gasSigner).withdrawGas(
+		amount, signature
+	);
+
+	console.log("Claimed!");
 }
-
 
 claimAllGas();
