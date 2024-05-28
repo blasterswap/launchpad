@@ -8,7 +8,7 @@ const chainId = 81457;
 const amount = 1;
 
 async function changeGovernorAndClaim() {
-	const [deployer, gasSigner, v2Governor] = await ethers.getSigners();
+	const [deployer, _, v2Governor] = await ethers.getSigners();
 
 	// chainge governor to gasRefund contract
 	const factory = await ethers.getContractAt("IBlasterswapV2Factory", v2FactoryAddress);
@@ -31,9 +31,7 @@ async function changeGovernorAndClaim() {
 
 		let receipt = await tx.wait();
 		totalGasSpent += (receipt!.gasUsed * tx.gasPrice);
-
-		console.log(`governor for pair ${pairAddress
-			} changed to ${gasRefundAddress} `);
+		console.log(`governor for pair ${pairAddress} changed to ${gasRefundAddress} `);
 
 		if (tenCounter === 10) {
 			pairAddressesByTen.push(tenPairAddresses);
@@ -45,14 +43,12 @@ async function changeGovernorAndClaim() {
 	}
 
 	for (let i = 0; i < pairAddressesByTen.length; i++) {
-		let tx = await gasRefund.connect(gasSigner).claimMaxGas(pairAddressesByTen[i]);
+		let tx = await gasRefund.connect(deployer).claimMaxGas(pairAddressesByTen[i]);
 		await tx.wait();
-		console.log(`Claimed gas for ${pairAddressesByTen[i].length} pairs`);
+		console.log(`Claimed gas for ${pairAddressesByTen[i]} pairs`);
 	}
 
 	console.log(`total gas spent: ${totalGasSpent.toString()}`);
-
-
 }
 
 changeGovernorAndClaim();
