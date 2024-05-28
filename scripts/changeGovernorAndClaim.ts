@@ -22,16 +22,24 @@ async function changeGovernorAndClaim() {
 	let pairAddressesByTen: string[][] = [];
 	let tenCounter = 0;
 
+
 	for (let i = 0; i < allPairLength; i++) {
 		const pairAddress = await factory.allPairs(i);
-		let tx = await blast.connect(v2Governor).configureGovernorOnBehalf(
-			gasRefundAddress,
-			pairAddress
-		);
+		const currentGovernor = await blast.governorMap(pairAddress);
 
-		let receipt = await tx.wait();
-		totalGasSpent += (receipt!.gasUsed * tx.gasPrice);
-		console.log(`governor for pair ${pairAddress} changed to ${gasRefundAddress} `);
+		if (currentGovernor === v2Governor.address) {
+			let tx = await blast.connect(v2Governor).configureGovernorOnBehalf(
+				gasRefundAddress,
+				pairAddress
+			);
+			let receipt = await tx.wait();
+			totalGasSpent += (receipt!.gasUsed * tx.gasPrice);
+
+			console.log(`governor for pair ${pairAddress} changed to ${gasRefundAddress}, remaining pairs: ${allPairLength - BigInt(i) - 1n}`);
+		} else {
+			console.log(`current governor for pair ${pairAddress} is ${currentGovernor}, index: ${i}`);
+		}
+
 
 		if (tenCounter === 10) {
 			pairAddressesByTen.push(tenPairAddresses);

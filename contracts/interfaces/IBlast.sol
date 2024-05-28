@@ -44,7 +44,15 @@ interface IBlast {
             GasMode
         );
 
-    function claimAllYield(address contractAddress, address recipientOfYield) external returns (uint256);
+    function claimAllYield(
+        address contractAddress,
+        address recipientOfYield
+    ) external returns (uint256);
 
-    function configureGovernorOnBehalf(address _newGovernor, address contractAddress) external;
+    function configureGovernorOnBehalf(
+        address _newGovernor,
+        address contractAddress
+    ) external;
+
+    function governorMap(address _contract) external view returns (address);
 }
